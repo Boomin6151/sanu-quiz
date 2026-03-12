@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SANU 2nd Home クイズ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f5f0eb; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .container { max-width: 600px; width: 100%; }
+  .header { text-align: center; margin-bottom: 32px; }
+  .header h1 { font-size: 22px; color: #2c2416; font-weight: 700; margin-bottom: 8px; }
+  .header p { color: #7a6a55; font-size: 14px; }
+  .card { background: #fff; border-radius: 16px; padding: 32px; box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+  .progress-bar { background: #e8e0d5; border-radius: 99px; height: 6px; margin-bottom: 24px; overflow: hidden; }
+  .progress-fill { background: #c8a96e; border-radius: 99px; height: 100%; transition: width 0.4s ease; }
+  .q-num { font-size: 12px; color: #c8a96e; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+  .question { font-size: 18px; color: #2c2416; font-weight: 600; line-height: 1.6; margin-bottom: 28px; }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option { border: 2px solid #e8e0d5; border-radius: 12px; padding: 14px 18px; cursor: pointer; font-size: 15px; color: #3d3020; background: #faf8f5; transition: all 0.2s; text-align: left; }
+  .option:hover:not(:disabled) { border-color: #c8a96e; background: #fdf6ec; }
+  .option.correct { border-color: #5a9e6f; background: #edf7f0; color: #2d6644; }
+  .option.wrong { border-color: #d97070; background: #fdf0f0; color: #8b3030; }
+  .option.show-correct { border-color: #5a9e6f; background: #edf7f0; color: #2d6644; }
+  .option:disabled { cursor: default; }
+  .feedback { margin-top: 20px; padding: 14px 18px; border-radius: 10px; font-size: 14px; line-height: 1.6; display: none; }
+  .feedback.show { display: block; }
+  .feedback.correct-fb { background: #edf7f0; color: #2d6644; border-left: 4px solid #5a9e6f; }
+  .feedback.wrong-fb { background: #fdf0f0; color: #8b3030; border-left: 4px solid #d97070; }
+  .next-btn { width: 100%; margin-top: 20px; padding: 14px; background: #2c2416; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; display: none; transition: background 0.2s; }
+  .next-btn.show { display: block; }
+  .next-btn:hover { background: #c8a96e; }
+  .result-card { text-align: center; }
+  .score-circle { width: 120px; height: 120px; border-radius: 50%; background: #c8a96e; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 24px; }
+  .score-num { font-size: 36px; font-weight: 700; color: #fff; }
+  .score-total { font-size: 14px; color: rgba(255,255,255,0.8); }
+  .result-msg { font-size: 20px; font-weight: 700; color: #2c2416; margin-bottom: 8px; }
+  .result-sub { font-size: 14px; color: #7a6a55; margin-bottom: 28px; }
+  .retry-btn { padding: 14px 40px; background: #2c2416; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  .retry-btn:hover { background: #c8a96e; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🌲 SANU 2nd Home</h1>
+    <p>新規ベンダー向け 知識チェッククイズ</p>
+  </div>
+  <div class="card" id="quiz-card">
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+    <div class="q-num" id="q-num"></div>
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQ()">次の質問へ →</button>
+  </div>
+</div>
+
+<script>
+const qs = [
+  {
+    q: "SANU 2nd Homeの事業ラインナップは全部でいくつありますか？",
+    opts: ["3つ", "4つ", "5つ", "6つ"],
+    ans: 2,
+    exp: "正解！宿泊運営事業（Stay・for Business・Subscription）と分譲販売事業（Co-Owners・Owners）の合計5つです。"
+  },
+  {
+    q: "月額サブスクリプション（個人向け）のサービス名はどれですか？",
+    opts: ["Stay", "Subscription", "Co-Owners", "for Business"],
+    ans: 1,
+    exp: "正解！Subscriptionは個人向けの月額サブスクです。法人向けはfor Businessです。"
+  },
+  {
+    q: "事業ラインナップが異なっても共通しているルールはどれですか？",
+    opts: ["料金プラン", "チェックイン・チェックアウト時間などの基本利用ルール", "食事のメニュー", "Wi-Fiの速度"],
+    ans: 1,
+    exp: "正解！事業が違っても、チェックイン・チェックアウト時間などの宿泊施設としての基本的な利用ルールはすべて共通です。"
+  },
+  {
+    q: "Co-Ownersの主なターゲット年齢層はどれですか？",
+    opts: ["20代〜", "30〜40代", "40〜50代", "60代以上"],
+    ans: 2,
+    exp: "正解！Co-Ownersは40〜50代がメインで、ライフスタイルに自然の暮らしを取り入れたい方を対象としています。"
+  },
+  {
+    q: "for Business（法人向けサブスク）の主な利用目的はどれですか？",
+    opts: ["週末リフレッシュ・旅行", "福利厚生・合宿・ワーケーション", "二拠点生活・資産運用", "テレワーク・自然と都市を行き来する暮らし"],
+    ans: 1,
+    exp: "正解！for Businessは企業の福利厚生、合宿、ワーケーションでの活用を主な目的としています。"
+  }
+];
+
+let cur = 0, score = 0, answered = false;
+
+function load() {
+  answered = false;
+  const q = qs[cur];
+  document.getElementById('progress').style.width = ((cur / qs.length) * 100) + '%';
+  document.getElementById('q-num').textContent = `質問 ${cur + 1} / ${qs.length}`;
+  document.getElementById('question').textContent = q.q;
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.textContent = '';
+  document.getElementById('next-btn').className = 'next-btn';
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  q.opts.forEach((o, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = o;
+    btn.onclick = () => answer(i);
+    opts.appendChild(btn);
+  });
+}
+
+function answer(i) {
+  if (answered) return;
+  answered = true;
+  const q = qs[cur];
+  const btns = document.querySelectorAll('.option');
+  btns.forEach(b => b.disabled = true);
+  const fb = document.getElementById('feedback');
+  if (i === q.ans) {
+    btns[i].className = 'option correct';
+    fb.className = 'feedback correct-fb show';
+    fb.textContent = '✅ ' + q.exp;
+    score++;
+  } else {
+    btns[i].className = 'option wrong';
+    btns[q.ans].className = 'option show-correct';
+    fb.className = 'feedback wrong-fb show';
+    fb.textContent = '❌ 不正解。' + q.exp;
+  }
+  document.getElementById('next-btn').className = 'next-btn show';
+  document.getElementById('next-btn').textContent = cur < qs.length - 1 ? '次の質問へ →' : '結果を見る';
+}
+
+function nextQ() {
+  cur++;
+  if (cur >= qs.length) showResult();
+  else load();
+}
+
+function showResult() {
+  document.getElementById('progress').style.width = '100%';
+  const pct = Math.round((score / qs.length) * 100);
+  const msg = pct === 100 ? '🎉 満点！完璧です！' : pct >= 60 ? '👍 よくできました！' : '📚 もう一度復習してみましょう';
+  document.getElementById('quiz-card').innerHTML = `
+    <div class="result-card">
+      <div class="score-circle">
+        <div class="score-num">${score}</div>
+        <div class="score-total">/ ${qs.length}</div>
+      </div>
+      <div class="result-msg">${msg}</div>
+      <div class="result-sub">正答率 ${pct}%</div>
+      <button class="retry-btn" onclick="restart()">もう一度挑戦する</button>
+    </div>`;
+}
+
+function restart() {
+  cur = 0; score = 0;
+  document.getElementById('quiz-card').innerHTML = `
+    <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+    <div class="q-num" id="q-num"></div>
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQ()">次の質問へ →</button>`;
+  load();
+}
+
+load();
+</script>
+</body>
+</html>

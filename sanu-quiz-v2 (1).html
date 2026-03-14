@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SANU 2nd Home 知識チェッククイズ</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #e8f5f0; min-height: 100vh; padding: 20px; }
+.container { max-width: 600px; margin: 0 auto; }
+.header { background: #fff; border-radius: 20px; padding: 28px; text-align: center; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.header .tree { font-size: 48px; margin-bottom: 8px; }
+.header h1 { font-size: 24px; font-weight: 800; color: #1a5c45; margin-bottom: 4px; }
+.header h2 { font-size: 16px; color: #2a9d6e; font-weight: 600; margin-bottom: 6px; }
+.header .greeting { font-size: 14px; color: #666; }
+.progress-card { background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.progress-title { font-size: 14px; font-weight: 700; color: #333; }
+.progress-count { font-size: 14px; font-weight: 700; color: #2a9d6e; }
+.progress-bar { background: #e0e0e0; border-radius: 99px; height: 8px; margin-bottom: 8px; overflow: hidden; }
+.progress-fill { background: linear-gradient(90deg, #2a9d6e, #52c99a); height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+.progress-sub { font-size: 12px; color: #999; text-align: right; }
+.category-list { display: flex; flex-direction: column; gap: 12px; }
+.category-card { background: #fff; border-radius: 16px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; cursor: pointer; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: transform 0.2s, box-shadow 0.2s; }
+.category-card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.category-card.completed { opacity: 0.7; }
+.cat-icon { font-size: 32px; width: 48px; text-align: center; flex-shrink: 0; }
+.cat-info { flex: 1; }
+.cat-name { font-size: 16px; font-weight: 700; color: #222; margin-bottom: 2px; }
+.cat-count { font-size: 13px; color: #999; }
+.cat-score { font-size: 12px; color: #2a9d6e; font-weight: 600; margin-top: 2px; }
+.cat-arrow { background: #d0e8e0; border-radius: 10px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #2a9d6e; font-size: 18px; flex-shrink: 0; transition: background 0.2s; }
+.category-card:hover .cat-arrow { background: #2a9d6e; color: #fff; }
+.cat-arrow.done { background: #2a9d6e; color: #fff; }
+.quiz-screen { display: none; }
+.quiz-header { background: #fff; border-radius: 16px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.back-btn { background: #e8f5f0; border: none; border-radius: 10px; width: 36px; height: 36px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: #2a9d6e; }
+.quiz-cat-name { font-size: 16px; font-weight: 700; color: #222; flex: 1; }
+.quiz-progress-text { font-size: 13px; color: #999; }
+.quiz-card { background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.q-bar { background: #e0e0e0; border-radius: 99px; height: 6px; margin-bottom: 20px; overflow: hidden; }
+.q-fill { background: linear-gradient(90deg, #2a9d6e, #52c99a); height: 100%; border-radius: 99px; transition: width 0.4s; }
+.question { font-size: 17px; font-weight: 600; color: #1a1a1a; line-height: 1.6; margin-bottom: 24px; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option { border: 2px solid #e0ede8; border-radius: 12px; padding: 14px 16px; cursor: pointer; font-size: 14px; color: #333; background: #f8fdf9; transition: all 0.2s; text-align: left; }
+.option:hover:not(:disabled) { border-color: #2a9d6e; background: #edf7f3; }
+.option.correct { border-color: #2a9d6e; background: #edf7f3; color: #1a5c45; font-weight: 600; }
+.option.wrong { border-color: #e05555; background: #fdf0f0; color: #8b2020; }
+.option.show-correct { border-color: #2a9d6e; background: #edf7f3; color: #1a5c45; }
+.option:disabled { cursor: default; }
+.feedback { margin-top: 16px; padding: 14px 16px; border-radius: 10px; font-size: 13px; line-height: 1.6; display: none; }
+.feedback.show { display: block; }
+.feedback.correct-fb { background: #edf7f3; color: #1a5c45; border-left: 4px solid #2a9d6e; }
+.feedback.wrong-fb { background: #fdf0f0; color: #8b2020; border-left: 4px solid #e05555; }
+.next-btn { width: 100%; margin-top: 16px; padding: 14px; background: #1a5c45; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; display: none; transition: background 0.2s; }
+.next-btn.show { display: block; }
+.next-btn:hover { background: #2a9d6e; }
+.result-screen { display: none; }
+.result-card { background: #fff; border-radius: 20px; padding: 36px 28px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.score-circle { width: 130px; height: 130px; border-radius: 50%; background: linear-gradient(135deg, #1a5c45, #2a9d6e); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 4px 20px rgba(42,157,110,0.3); }
+.score-num { font-size: 40px; font-weight: 800; color: #fff; }
+.score-total { font-size: 13px; color: rgba(255,255,255,0.8); }
+.result-cat { font-size: 13px; color: #2a9d6e; font-weight: 600; margin-bottom: 8px; }
+.result-msg { font-size: 20px; font-weight: 800; color: #1a1a1a; margin-bottom: 6px; }
+.result-sub { font-size: 13px; color: #999; margin-bottom: 28px; }
+.result-btns { display: flex; gap: 10px; }
+.retry-btn { flex: 1; padding: 13px; background: #e8f5f0; color: #1a5c45; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.home-btn { flex: 1; padding: 13px; background: #1a5c45; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div id="home-screen">
+  <div class="header">
+    <div class="tree">🌲</div>
+    <h1>SANU 2nd Home</h1>
+    <h2>知識チェッククイズ</h2>
+    <div class="greeting">新規ベンダー向け研修</div>
+  </div>
+  <div class="progress-card">
+    <div class="progress-header">
+      <div class="progress-title">📊 全体の進捗</div>
+      <div class="progress-count" id="cat-progress">0 / 4 カテゴリー完了</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="total-bar" style="width:0%"></div></div>
+    <div class="progress-sub" id="q-progress">0 / 12 問クリア済み</div>
+  </div>
+  <div class="category-list" id="cat-list"></div>
+</div>
+
+<div class="quiz-screen" id="quiz-screen">
+  <div class="quiz-header">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div class="quiz-cat-name" id="quiz-cat-name"></div>
+    <div class="quiz-progress-text" id="quiz-progress-text"></div>
+  </div>
+  <div class="quiz-card">
+    <div class="q-bar"><div class="q-fill" id="q-fill"></div></div>
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQ()">次の問題へ →</button>
+  </div>
+</div>
+
+<div class="result-screen" id="result-screen">
+  <div class="result-card">
+    <div class="result-cat" id="result-cat"></div>
+    <div class="score-circle">
+      <div class="score-num" id="result-score"></div>
+      <div class="score-total" id="result-total"></div>
+    </div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="result-sub" id="result-sub"></div>
+    <div class="result-btns">
+      <button class="retry-btn" onclick="retryCategory()">もう一度</button>
+      <button class="home-btn" onclick="goHome()">ホームへ</button>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+const categories = [
+  {
+    id: 0, name: 'SANU 2nd Home事業', icon: '🏢',
+    questions: [
+      {
+        q: 'SANU 2nd Homeの事業ラインナップは全部でいくつありますか？',
+        opts: ['3つ', '4つ', '5つ', '6つ'],
+        ans: 2,
+        exp: '宿泊運営事業（Stay・for Business・Subscription）と分譲販売事業（Co-Owners・Owners）の合計5つです。'
+      },
+      {
+        q: '事業ラインナップが異なっても共通しているルールはどれですか？',
+        opts: ['料金プラン', 'チェックイン・チェックアウト時間などの基本利用ルール', '食事のメニュー', '各拠点の特別サービス'],
+        ans: 1,
+        exp: '事業が違っても、チェックイン・チェックアウト時間などの宿泊施設としての基本的な利用ルールはすべて共通です。'
+      },
+      {
+        q: '分譲販売事業に含まれるサービスはどれですか？',
+        opts: ['Stay と Subscription', 'for Business と Stay', 'Co-Owners と Owners', 'Subscription と Co-Owners'],
+        ans: 2,
+        exp: '分譲販売事業は「Co-Owners（共有持分型）」と「Owners（フル所有型）」の2つです。'
+      },
+    ]
+  },
+  {
+    id: 1, name: 'SANU 2nd Home付帯サービス', icon: '🎁',
+    questions: [
+      {
+        q: 'SANU 2nd Homeの付帯サービスとして提供されているものはどれですか？',
+        opts: ['フードデリバリー', 'STAY GIFT', '専用シャトルバス', '無料クリーニング'],
+        ans: 1,
+        exp: 'カーシェア、KIDS CARE（お子さんの一時預かり）、ONE MORE CABIN、STAY GIFTなどの付帯サービスがあります。'
+      },
+      {
+        q: 'KIDS CAREとはどのようなサービスですか？',
+        opts: ['子ども向けアクティビティ教室', 'お子さんの一時預かり', '子ども用備品の貸し出し', '離乳食の提供'],
+        ans: 1,
+        exp: 'KIDS CAREはお子さんの一時預かりサービスです。利用者が便利に滞在できるよう、付帯サービスとして提供されています。'
+      },
+      {
+        q: '付帯サービスを提供している目的はどれですか？',
+        opts: ['収益を増やすため', '他社との差別化のため', '利用者が便利に滞在できるようにするため', '施設の稼働率を上げるため'],
+        ans: 2,
+        exp: '付帯サービスは利用者が便利に滞在いただけるよう提供されています。カーシェアやKIDS CAREなど複数のサービスがあります。'
+      },
+    ]
+  },
+  {
+    id: 2, name: '施設タイプ・拠点の特徴', icon: '🏠',
+    questions: [
+      {
+        q: 'SANU 2nd Homeの建築タイプは全部でいくつのシリーズがありますか？',
+        opts: ['3つ', '4つ', '5つ', '6つ'],
+        ans: 2,
+        exp: '建築のタイプは5つのシリーズがあります。SANUが土地を購入し建築するOriginal Seriesと、既存物件をリノベーションするSelection Seriesが含まれます。'
+      },
+      {
+        q: 'Original SeriesとSelection Seriesの違いはどれですか？',
+        opts: [
+          'Original Seriesは都市型、Selection Seriesは山岳型',
+          'Original SeriesはSANUが土地を購入し建築、Selection Seriesは既存物件をリノベーション',
+          'Original Seriesは会員専用、Selection Seriesは一般向け',
+          'Original Seriesは大型、Selection Seriesは小型'
+        ],
+        ans: 1,
+        exp: 'SANU自身で土地を購入しデザイン・建築するのがOriginal Series、既存物件をリノベーションするのがSelection Seriesです。'
+      },
+      {
+        q: 'Original Seriesにはどのようなサイズ展開がありますか？',
+        opts: ['S・M・Lの3サイズ', 'MサイズとLサイズの2パターン', '標準サイズのみ', 'XS・S・M・Lの4サイズ'],
+        ans: 1,
+        exp: 'Original SeriesはMサイズ（通常サイズ）とLサイズの2パターンがあります。'
+      },
+    ]
+  },
+  {
+    id: 3, name: '設備・備品の基本知識', icon: '🛏️',
+    questions: [
+      {
+        q: '全ての施設に共通して設置されているものはどれですか？',
+        opts: ['温泉・サウナ', 'ペット用設備', '寝室・キッチン・洗面所浴室', 'テレワーク専用デスク'],
+        ans: 2,
+        exp: '全ての施設に寝室・キッチン・洗面所浴室があります。セカンドホームとして過ごせるよう備品も充実しています。'
+      },
+      {
+        q: '拠点によって異なる可能性があるものはどれですか？',
+        opts: ['チェックイン時間', '設置している家電用品などの備品', 'キャンセルポリシー', '予約方法'],
+        ans: 1,
+        exp: '設置している家電用品などは拠点によって異なる場合があるため、設備操作マニュアルを参照する必要があります。'
+      },
+      {
+        q: '有料備品として全拠点に設置されているものはどれですか？',
+        opts: ['タオル（¥300）', '歯ブラシ（¥200税抜）', 'スリッパ（¥500）', 'シャンプー（¥100）'],
+        ans: 1,
+        exp: '歯ブラシ（¥200税抜）は全拠点に設置されている有料備品です。有料備品の内容は拠点ごとに異なります。'
+      },
+    ]
+  }
+];
+
+let state = { scores: [null, null, null, null] };
+let curCat = 0, curQ = 0, catScore = 0, answered = false;
+
+function totalQ() { return categories.reduce((a, c) => a + c.questions.length, 0); }
+
+function renderHome() {
+  document.getElementById('home-screen').style.display = 'block';
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+
+  const done = state.scores.filter(s => s !== null).length;
+  const total = categories.length;
+  const qDone = state.scores.reduce((a, b, i) => a + (b !== null ? categories[i].questions.length : 0), 0);
+  document.getElementById('cat-progress').textContent = `${done} / ${total} カテゴリー完了`;
+  document.getElementById('total-bar').style.width = `${(done / total) * 100}%`;
+  document.getElementById('q-progress').textContent = `${qDone} / ${totalQ()} 問クリア済み`;
+
+  const list = document.getElementById('cat-list');
+  list.innerHTML = '';
+  categories.forEach(cat => {
+    const isDone = state.scores[cat.id] !== null;
+    const card = document.createElement('div');
+    card.className = 'category-card' + (isDone ? ' completed' : '');
+    card.onclick = () => startCat(cat.id);
+    card.innerHTML = `
+      <div class="cat-icon">${cat.icon}</div>
+      <div class="cat-info">
+        <div class="cat-name">${cat.name}</div>
+        <div class="cat-count">${cat.questions.length}問</div>
+        ${isDone ? `<div class="cat-score">✅ ${state.scores[cat.id]} / ${cat.questions.length} 正解</div>` : ''}
+      </div>
+      <div class="cat-arrow ${isDone ? 'done' : ''}">${isDone ? '✓' : '▶'}</div>`;
+    list.appendChild(card);
+  });
+}
+
+function startCat(id) {
+  curCat = id; curQ = 0; catScore = 0; answered = false;
+  document.getElementById('home-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'block';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('quiz-cat-name').textContent = categories[id].name;
+  loadQ();
+}
+
+function loadQ() {
+  answered = false;
+  const cat = categories[curCat];
+  const q = cat.questions[curQ];
+  document.getElementById('quiz-progress-text').textContent = `${curQ + 1} / ${cat.questions.length}`;
+  document.getElementById('q-fill').style.width = `${(curQ / cat.questions.length) * 100}%`;
+  document.getElementById('question').textContent = q.q;
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback'; fb.textContent = '';
+  document.getElementById('next-btn').className = 'next-btn';
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  q.opts.forEach((o, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option'; btn.textContent = o;
+    btn.onclick = () => answer(i);
+    opts.appendChild(btn);
+  });
+}
+
+function answer(i) {
+  if (answered) return;
+  answered = true;
+  const q = categories[curCat].questions[curQ];
+  const btns = document.querySelectorAll('.option');
+  btns.forEach(b => b.disabled = true);
+  const fb = document.getElementById('feedback');
+  const nb = document.getElementById('next-btn');
+  if (i === q.ans) {
+    btns[i].className = 'option correct';
+    fb.className = 'feedback correct-fb show';
+    fb.textContent = '✅ 正解！ ' + q.exp;
+    catScore++;
+  } else {
+    btns[i].className = 'option wrong';
+    btns[q.ans].className = 'option show-correct';
+    fb.className = 'feedback wrong-fb show';
+    fb.textContent = '❌ 不正解。' + q.exp;
+  }
+  const isLast = curQ >= categories[curCat].questions.length - 1;
+  nb.className = 'next-btn show';
+  nb.textContent = isLast ? '結果を見る 🎉' : '次の問題へ →';
+}
+
+function nextQ() {
+  curQ++;
+  if (curQ >= categories[curCat].questions.length) showResult();
+  else loadQ();
+}
+
+function showResult() {
+  state.scores[curCat] = catScore;
+  const cat = categories[curCat];
+  const pct = Math.round((catScore / cat.questions.length) * 100);
+  const msg = pct === 100 ? '🎉 満点！完璧です！' : pct >= 60 ? '👍 よくできました！' : '📚 復習してみましょう';
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('result-screen').style.display = 'block';
+  document.getElementById('result-cat').textContent = cat.icon + ' ' + cat.name;
+  document.getElementById('result-score').textContent = catScore;
+  document.getElementById('result-total').textContent = '/ ' + cat.questions.length;
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('result-sub').textContent = `正答率 ${pct}%`;
+}
+
+function retryCategory() { startCat(curCat); }
+function goHome() { renderHome(); }
+
+renderHome();
+</script>
+</body>
+</html>
